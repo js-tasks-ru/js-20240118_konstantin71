@@ -5,11 +5,15 @@
  * @returns {string[]}
  */
 export function sortStrings(arr, param = 'asc') {
-  const res = [...arr].sort(stringLocalCompare);
+  const compareFunc = param == 'asc' ? stringLocalCompare : stringLocalCompareReverse;
 
-  return param == 'asc' ? res : res.reverse();
+  return [...arr].sort(compareFunc);
 }
 
 function stringLocalCompare(a, b) {
   return a.localeCompare(b, ['ru', 'en'], {caseFirst: 'upper'});
+}
+
+function stringLocalCompareReverse(a, b) {
+  return stringLocalCompare(a, b) * -1;
 }
