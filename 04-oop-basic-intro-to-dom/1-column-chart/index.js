@@ -5,7 +5,7 @@ export default class ColumnChart {
     value = 200,
     link = '#',
     formatHeading = v => v
-    } = {}) {
+  } = {}) {
 
     this._data = data;
     this._label = label;
@@ -68,12 +68,12 @@ export default class ColumnChart {
 
 
     for (const item of getColumnProps(this._data, this.chartHeight)) {
-        const tempElement = document.createElement('div');
+      const tempElement = document.createElement('div');
         
-        tempElement.style = `--value: ${item.value}`;
-        tempElement.dataset.tooltip = item.percent;
+      tempElement.style = `--value: ${item.value}`;
+      tempElement.dataset.tooltip = item.percent;
 
-        chart.append(tempElement);
+      chart.append(tempElement);
     }
   }
 
@@ -84,16 +84,16 @@ export default class ColumnChart {
 }
 
 function getColumnProps(data, chartHeight) {
-    const maxValue = Math.max(...data);
-    const scale = chartHeight / maxValue;
+  const maxValue = Math.max(...data);
+  const scale = chartHeight / maxValue;
   
-    return data.map(item => {
-      return {
-        percent: (item / maxValue * 100).toFixed(0) + '%',
-        value: String(Math.floor(item * scale))
-      };
-    });
-  }
+  return data.map(item => {
+    return {
+      percent: (item / maxValue * 100).toFixed(0) + '%',
+      value: String(Math.floor(item * scale))
+    };
+  });
+}
 
 class UtilsHTML {
   static createHTMLElement(html) {
@@ -105,7 +105,7 @@ class UtilsHTML {
   static removeChildren (element) {
     while (element.firstElementChild) {
       element.firstElementChild.remove();
-  }
+    }
 
   }
 }
