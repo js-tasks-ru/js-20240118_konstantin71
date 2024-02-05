@@ -1,4 +1,8 @@
 export function createElementFromHTML(html) {
+  if (html instanceof HTMLElement) {
+    return html;
+  }
+
   const tempElement = document.createElement('div');
   tempElement.innerHTML = html;
   return tempElement.firstElementChild; 
