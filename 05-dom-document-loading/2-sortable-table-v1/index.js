@@ -134,8 +134,6 @@ export default class SortableTable extends Component {
     this._rows.forEach(
       ({element: rowElement}) => this.subElements.body.append(rowElement)
     );
-
-    console.log('finish sort');
   }
 }
 

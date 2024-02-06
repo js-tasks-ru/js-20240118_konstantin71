@@ -13,6 +13,8 @@ export default class NotificationMessage extends Component {
       this._message = message;
       this._duration = duration;
       this._type = type;
+
+      this._timerId = null;
         
       this.render();
     }
@@ -38,7 +40,12 @@ export default class NotificationMessage extends Component {
 
       NotificationMessage.lastInstance = this;
 
-      setTimeout(() => this.remove(), this._duration);
+      this._timerId = setTimeout(() => this.remove(), this._duration);
+    }
+
+    destroy() {
+      super.destroy();
+      clearTimeout(this._timerId);
     }
 }
 
