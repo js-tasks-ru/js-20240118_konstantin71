@@ -41,9 +41,10 @@ class Tooltip {
   }
 
   handleDocumentPointerout = () => {
-    this.remove();
-
-    this._isShow = false;
+    if (this._isShow) {
+      this.remove();
+      this._isShow = false;  
+    }
   }
 
   handleDocumentMousemove = (event) => {
