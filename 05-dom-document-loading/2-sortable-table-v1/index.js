@@ -8,7 +8,10 @@ export default class SortableTable extends Component {
     this._data = data;
 
     this.subElements = {
-      body: null
+      body: null,
+      header: {
+        children: []
+      }
     };
 
     this._columns = {};
@@ -45,9 +48,13 @@ export default class SortableTable extends Component {
     header.classList.add('sortable-table__header', 'sortable-table__row');
 
     this._columns = {};
+    this.subElements.header.children = [];
 
     for (const headerCellConfig of this._headerConfig) {
-      header.append(this.templateMakeHeaderCell(headerCellConfig));
+      const newColumn = this.templateMakeHeaderCell(headerCellConfig);
+      
+      header.append(newColumn);
+      this.subElements.header.children.push(newColumn);
     }
 
     return header;
@@ -113,7 +120,14 @@ export default class SortableTable extends Component {
     return table;
   }
 
+  clearOrder() {
+    for (const [id, value] of Object.entries(this._columns)) {
+      value.dataset.order = '';
+    }
+  }
+
   sort(field, order = 'asc') {
+    this.clearOrder();
     this._columns[field].dataset.order = order;
 
     this._rows.sort((a, b) => {
