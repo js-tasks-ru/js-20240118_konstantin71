@@ -4,8 +4,12 @@ const STATE_DEFAULT = 'default';
 const STATE_MOVE_LEFT = 'left';
 const STATE_MOVE_RIGHT = 'right';
 
+
+
+
 export default class DoubleSlider {
     element = null;
+    subElements = {};
 
     constructor({
       min = 0,
@@ -23,13 +27,19 @@ export default class DoubleSlider {
       this._to = to ?? max;
       this._formatValue = formatValue;
 
-      this.subElements = {};
       this._state = STATE_DEFAULT;
+      this._clickPosX = null;
 
       this.createListeners();
       this.render();
     }
   
+    selectSubElements() {
+      this.element.querySelectorAll('[data-element]').forEach(element => {
+        this.subElements[element.dataset.element] = element;
+      });
+    }
+
     createListeners() {
       document.addEventListener('pointerdown', this.handleDocumentPointerdown);
       document.addEventListener('pointermove', this.handleDocumentPointermove);
@@ -45,53 +55,68 @@ export default class DoubleSlider {
     handleDocumentPointerdown = (event) => {
       if (event.target == this.subElements.left) {
         this._state = STATE_MOVE_LEFT;
+        
+        this.sliderRect = this.subElements.slider.getBoundingClientRect();
+         
         return;
       } 
         
       if (event.target == this.subElements.right) {
         this._state = STATE_MOVE_RIGHT;
+
+        this.sliderRect = this.subElements.slider.getBoundingClientRect();
+        
         return;            
       }
     }
 
+    get selected() {
+      return {
+        from: this._from,
+        to: this._to
+      };
+    }
+
     handleDocumentPointerup = (event) => {
       this._state = STATE_DEFAULT;
+
+      const rangeSelect = new CustomEvent("range-select", 
+        { bubbles: true, detail: this.selected }); 
+      
+      this.element.dispatchEvent(rangeSelect);
     }
 
     handleDocumentPointermove = (event) => {
-
-      const {left: leftBorder, right: rightBorder, width} = this.subElements.inner.getBoundingClientRect();
-      const {right: leftSlider} = this.subElements.left.getBoundingClientRect();
-      const {left: rightSlider} = this.subElements.right.getBoundingClientRect();
-
-      console.log(leftSlider, rightSlider, leftBorder, rightBorder);
-      console.log(this._from, this._to);
-      console.log(this._from, this._to);
-      console.log('left', this.subElements.left.getBoundingClientRect());
-      console.log('right', this.subElements.right.getBoundingClientRect());
-      console.log('inner', this.subElements.inner.getBoundingClientRect());
-
       if (this._state == STATE_MOVE_LEFT) {
-        let clientX = event.clientX;
+        
+        const clickX = event.clientX;
+        const sliderLeftX = this.sliderRect.left;
+        const sliderRightX = this.sliderRect.left + this.sliderRect.width;
+        
+        const normalizeClickX = Math.max(sliderLeftX, Math.min(sliderRightX, clickX));
+        const clickSliderX = normalizeClickX - sliderLeftX;
+        const percentClickX = Math.round(clickSliderX / this.sliderRect.width * 100);
 
-        clientX = Math.max(leftBorder, clientX);
-        clientX = Math.min(rightSlider, clientX);
-
-        const proc = (clientX - leftBorder) / width * 100;
+        const toProc = (this._to - this.min) / (this.max - this.min) * 100;
+        const normalizePercentClickX = Math.min(percentClickX, toProc);
             
-        this.updateValueFrom(proc);
+        this.updateValueFrom(normalizePercentClickX);
         return;
       }
     
       if (this._state == STATE_MOVE_RIGHT) {
-        let clientX = event.clientX;
+        const clickX = event.clientX;
+        const sliderLeftX = this.sliderRect.left;
+        const sliderRightX = this.sliderRect.left + this.sliderRect.width;
+        
+        const normalizeClickX = Math.max(sliderLeftX, Math.min(sliderRightX, clickX));
+        const clickSliderX = normalizeClickX - sliderLeftX;
+        const percentClickX = Math.round(clickSliderX / this.sliderRect.width * 100);
+        
+        const fromProc = (this._from - this.min) / (this.max - this.min) * 100;
+        const normalizePercentClickX = Math.max(percentClickX, fromProc);
 
-        clientX = Math.min(rightBorder, clientX);
-        clientX = Math.max(leftSlider, clientX);
-
-        const proc = (clientX - leftBorder) / width * 100;
-            
-        this.updateValueTo(proc);
+        this.updateValueTo(normalizePercentClickX);
         return;
       }
     }
@@ -100,15 +125,11 @@ export default class DoubleSlider {
       this._from = Math.round((this.max - this.min) * proc / 100 + this.min);
       this.subElements.from.innerHTML = this._formatValue(this._from); 
 
-      console.log('update value', proc);
-      console.log('update value', this._from);
-
       this.subElements.left.style.left = proc + '%';
       this.subElements.progress.style.left = proc + '%';
     }
 
     updateValueTo(proc) {
-      console.log(proc);
       this._to = Math.round((this.max - this.min) * proc / 100 + this.min);
       this.subElements.to.innerHTML = this._formatValue(this._to);
 
@@ -120,15 +141,13 @@ export default class DoubleSlider {
       const fromProc = (this._from - this.min) / (this.max - this.min) * 100;
       const toProc = (this._to - this.min) / (this.max - this.min) * 100;
 
-      console.log('template', fromProc, toProc);
-
       return `
         <div class="range-slider">
             <span data-element="from">${this._formatValue(this._from)}</span>
-            <div class="range-slider__inner">
-                <span class="range-slider__progress" style="left: ${fromProc}%; right: ${100 - toProc}%"></span>
-                <span class="range-slider__thumb-left" style="left: ${fromProc}%"></span>
-                <span class="range-slider__thumb-right" style="right: ${100 - toProc}%"></span>
+            <div data-element="slider" class="range-slider__inner">
+                <span data-element="progress" class="range-slider__progress" style="left: ${fromProc}%; right: ${100 - toProc}%"></span>
+                <span data-element="left" class="range-slider__thumb-left" style="left: ${fromProc}%"></span>
+                <span data-element="right" class="range-slider__thumb-right" style="right: ${100 - toProc}%"></span>
             </div>
             <span data-element="to">${this._formatValue(this._to)}</span>
         </div>
@@ -136,16 +155,8 @@ export default class DoubleSlider {
     }
 
     render() {
-      this.element = createElementFromHTML(this.template());   
-
-      this.subElements.left = this.element.querySelector('.range-slider__thumb-left');   
-      this.subElements.right = this.element.querySelector('.range-slider__thumb-right');   
-      this.subElements.progress = this.element.querySelector('.range-slider__progress');   
-      this.subElements.inner = this.element.querySelector('.range-slider__inner');   
-      this.subElements.from = this.element.querySelector('span[data-element="from"]');   
-      this.subElements.to = this.element.querySelector('span[data-element="to"]');  
-
-
+      this.element = createElementFromHTML(this.template());
+      this.selectSubElements();
     }
 
     remove() {
