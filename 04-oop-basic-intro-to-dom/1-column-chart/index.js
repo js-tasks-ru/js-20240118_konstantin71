@@ -1,3 +1,5 @@
+import { createElementFromHTML, removeChildren } from "../../utils/html.js";
+
 export default class ColumnChart {
   constructor({
     data = [],
@@ -14,23 +16,32 @@ export default class ColumnChart {
     this._link = link;
 
     this.chartHeight = 50;
-    
-    this.render();
+
+    this.subElements = {};
+    this.element = null;
+
+    this.createElement();
     this._update();    
   }
 
-  render() {
-    this._element = UtilsHTML.createHTMLElement(this.template());
-    document.body.append(this._element);
+  createElement() {
+    this.element = createElementFromHTML(this.template());
+    this.selectSubElements();
+  }
+
+  selectSubElements() {
+    this.element.querySelectorAll('[data-element]').forEach(element => {
+      this.subElements[element.dataset.element] = element;
+    });
   }
 
   remove() {
-    this._element.remove();
+    this.element?.remove();
   }
 
   destroy() {
     this.remove();
-    this._element = null;
+    this.element = null;
   }
 
   getHeadingContent() {
@@ -39,7 +50,7 @@ export default class ColumnChart {
   
   template() {
     return `
-    <div class="column-chart ${this._data.length > 0 ? '' : 'column-chart_loading'}" style="--chart-height: 50">
+    <div class="column-chart ${this._data.length > 0 ? '' : 'column-chart_loading'}" style="--chart-height: ${this.chartHeight}">
       <div class="column-chart__title">
         ${this._label}
         <a href="${this._link}" class="column-chart__link">View all</a>
@@ -58,16 +69,16 @@ export default class ColumnChart {
   update(data) {
     this._data = data;
     this._update();
+
+    return data;
   }
 
   _update() {
-    const chart = this._element.querySelector('.column-chart__chart');
+    const chart = this.element.querySelector('.column-chart__chart');
 
-    UtilsHTML.removeChildren(chart);
+    removeChildren(chart);
 
-
-
-    for (const item of getColumnProps(this._data, this.chartHeight)) {
+    for (const item of this.getColumnProps(this._data, this.chartHeight)) {
       const tempElement = document.createElement('div');
         
       tempElement.style = `--value: ${item.value}`;
@@ -75,38 +86,24 @@ export default class ColumnChart {
 
       chart.append(tempElement);
     }
-  }
 
-
-  get element() {
-    return this._element;
-  }
-}
-
-function getColumnProps(data, chartHeight) {
-  const maxValue = Math.max(...data);
-  const scale = chartHeight / maxValue;
-  
-  return data.map(item => {
-    return {
-      percent: (item / maxValue * 100).toFixed(0) + '%',
-      value: String(Math.floor(item * scale))
-    };
-  });
-}
-
-class UtilsHTML {
-  static createHTMLElement(html) {
-    const tempElement = document.createElement('div');
-    tempElement.innerHTML = html;
-    return tempElement.firstElementChild; 
-  }
-
-  static removeChildren (element) {
-    while (element.firstElementChild) {
-      element.firstElementChild.remove();
+    if (this._data.length > 0) {
+      this.element.classList.remove('column-chart_loading');
+    } else {
+      this.element.classList.add('column-chart_loading');
     }
+  }
 
+  getColumnProps(data, chartHeight) {
+    const maxValue = Math.max(...data);
+    const scale = chartHeight / maxValue;
+    
+    return data.map(item => {
+      return {
+        percent: (item / maxValue * 100).toFixed(0) + '%',
+        value: String(Math.floor(item * scale))
+      };
+    });
   }
 }
 
