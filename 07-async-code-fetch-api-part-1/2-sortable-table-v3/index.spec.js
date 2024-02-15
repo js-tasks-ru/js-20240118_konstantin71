@@ -84,9 +84,9 @@ describe('async-code-fetch-api-part-1/sortable-table-v3', () => {
   it('should render loaded data correctly', async() => {
     fetchMock.mockResponseOnce(JSON.stringify(products));
 
-    await sortableTable.render();
-
     const { body } = sortableTable.subElements;
+
+    await sortableTable.render();
 
     expect(body.children.length).toEqual(3);
 
@@ -106,6 +106,8 @@ describe('async-code-fetch-api-part-1/sortable-table-v3', () => {
         order: 'asc'
       }
     });
+
+    document.body.append(sortableTable.element);
 
     fetchMock.mockResponseOnce(JSON.stringify(bestsellers));
 

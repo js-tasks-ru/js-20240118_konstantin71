@@ -1,14 +1,13 @@
  
-import { makeFromTemplate, Component } from "../../utils/html.js";
+import { makeFromTemplate, createElementFromHTML } from "../../utils/html.js";
 
-export default class NotificationMessage extends Component {
+export default class NotificationMessage {
     static lastInstance = null;
+    element = null;
 
     constructor(message, {
       duration = 2000, 
       type = 'success'} = {}) {
-        
-      super();
 
       this._message = message;
       this._duration = duration;
@@ -16,8 +15,22 @@ export default class NotificationMessage extends Component {
 
       this._timerId = null;
         
-      this.render();
+      this.createElement();
     }
+
+    createElement() {
+      this.element = createElementFromHTML(this.template());
+    }
+      
+    remove() {
+      this.element?.remove();
+    }
+         
+    destroy() {
+      this.remove();
+      this.element = null;
+      clearTimeout(this._timerId);
+    }  
 
     get duration() {
       return this._duration;
@@ -36,16 +49,11 @@ export default class NotificationMessage extends Component {
       NotificationMessage.lastInstance?.remove();
 
       target ??= document.body;
-      target.append(this._element);
+      target.append(this.element);
 
       NotificationMessage.lastInstance = this;
 
       this._timerId = setTimeout(() => this.remove(), this._duration);
-    }
-
-    destroy() {
-      super.destroy();
-      clearTimeout(this._timerId);
     }
 }
 

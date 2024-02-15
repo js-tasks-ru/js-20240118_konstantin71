@@ -3,21 +3,25 @@ import BaseSortableTable from '../../05-dom-document-loading/2-sortable-table-v1
 export default class SortableTable extends BaseSortableTable {
   constructor(headersConfig, {
     data = [],
+    isSortLocally = false,
     sorted = {}
   } = {}) {
     super(headersConfig, data);
 
-    this.sort(sorted.id, sorted.order);
+    this._sorted = sorted;
+    this._isSortLocally = isSortLocally;
+
+    //this.sort(sorted.id, sorted.order);
 
     this.createListeners();
   }
 
   createListeners() {
-    document.body.addEventListener('pointerdown', this.handleDocumentPointerdown);
+    this.subElements.header.header.addEventListener('pointerdown', this.handleDocumentPointerdown);
   }
 
   destroyListeners() {
-    document.body.removeEventListener('pointerover', this.handleDocumentPointerdown);
+    this.subElements.header.header.removeEventListener('pointerover', this.handleDocumentPointerdown);
   }
 
   switchOrder(currentOrder) {
@@ -32,6 +36,10 @@ export default class SortableTable extends BaseSortableTable {
     const column = event.target.closest('.sortable-table__cell');
     
     if (!column) {
+      return;
+    }
+    
+    if (column.dataset.sortable == 'false') {
       return;
     }
 

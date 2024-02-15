@@ -1,15 +1,17 @@
-import { makeFromTemplate, Component, createElementFromHTML, removeChildren } from "../../utils/html.js";
+import { makeFromTemplate, createElementFromHTML, removeChildren } from "../../utils/html.js";
 
-export default class SortableTable extends Component {
+export default class SortableTable {
+  element = null;
+
   constructor(headerConfig = [], data = []) {
-    super();
-
     this._headerConfig = headerConfig;
     this._data = data;
 
     this.subElements = {
+      table: null,
       body: null,
       header: {
+        header: null,
         children: []
       }
     };
@@ -17,8 +19,25 @@ export default class SortableTable extends Component {
     this._columns = {};
     this._rows = [];
 
-    this.render();
+    this.createElement();
+
+    if (this._data.length > 0) {
+      this.update();
+    }
   }
+
+  createElement() {
+    this.element = createElementFromHTML(this.template());
+  }
+    
+  remove() {
+    this.element?.remove();
+  }
+       
+  destroy() {
+    this.remove();
+    this.element = null;
+  }  
 
   templateMakeHeaderCell({
     id,
@@ -57,6 +76,8 @@ export default class SortableTable extends Component {
       this.subElements.header.children.push(newColumn);
     }
 
+    this.subElements.header.header = header;
+
     return header;
   }
 
@@ -74,17 +95,6 @@ export default class SortableTable extends Component {
 
     tableBody.dataset.element = 'body';
     tableBody.classList.add('sortable-table__body');
-
-    this._rows = [];
-
-    for (const rowData of this._data) {
-      const row = this.templateMakeRow(rowData);
-      tableBody.append(row);
-      this._rows.push({
-        element: row,
-        value: rowData
-      });
-    }
 
     this.subElements.body = tableBody;
 
@@ -112,12 +122,37 @@ export default class SortableTable extends Component {
   template() {
     const table = document.createElement('div');
     table.classList.add('sortable-table');
+    this.subElements.table = table;
 
     table.append(this.templateMakeHeader());
     table.append(this.templateMakeTableBody());
     table.append(this.templateMakeLoadingLine());
+    table.append(createElementFromHTML(TEMPLATE_EMPTY_PLACEHOLDER));
 
     return table;
+  }
+
+  async update() {
+    const body = this.subElements.body;
+    
+    removeChildren(body);
+
+    this._rows = [];
+
+    for (const rowData of this._data) {
+      const row = this.templateMakeRow(rowData);
+      body.append(row);
+      this._rows.push({
+        element: row,
+        value: rowData
+      });
+    }
+
+    if (this._rows.length == 0) {
+      this.subElements.table.classList.add('sortable-table_empty');
+    } else {
+      this.subElements.table.classList.remove('sortable-table_empty');
+    }
   }
 
   clearOrder() {
@@ -127,6 +162,15 @@ export default class SortableTable extends Component {
   }
 
   sort(field, order = 'asc') {
+    if (!field) {
+      return;
+    }
+
+    this._sorted = {
+      id: field,
+      order: order 
+    };
+    
     this.clearOrder();
     this._columns[field].dataset.order = order;
 
@@ -162,6 +206,15 @@ const TEMPLATE_HEADER_CELL_SORTING_MARKER = `
 <span data-element="arrow" class="sortable-table__sort-arrow">
   <span class="sort-arrow"></span>
 </span>
+`;
+
+const TEMPLATE_EMPTY_PLACEHOLDER = `
+<div data-element="emptyPlaceholder" class="sortable-table__empty-placeholder">
+<div>
+  <p>No products satisfies your filter criteria</p>
+  <button type="button" class="button-primary-outline">Reset all filters</button>
+</div>
+</div>
 `;
 
 function stringLocalCompare(a, b) {
