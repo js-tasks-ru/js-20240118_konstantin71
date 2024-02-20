@@ -25,27 +25,21 @@ export function makeFromTemplate(template, fields) {
 }
 
 export class Component {
-    
-  constructor() {         
-    this._element = null;
-  }
+  element = null;
 
-  get element() {
-    return this._element;
+  constructor() {         
   }
 
   render() {
-    this._element = createElementFromHTML(this.template());
+    this.element = createElementFromHTML(this.template());
   }
     
   remove() {
-    if (this._element) {
-      this._element.remove();
-    }
+    this.element?.remove();
   }
        
   destroy() {
     this.remove();
-    this._element = null;
-  }    
+    this.element = null;
+  }  
 }
